@@ -38,7 +38,7 @@ git config --global user.name "Saadat Qadri"
 git config --global init.defaultBranch main
 git config --global core.editor "code --wait"
 git config --global credential.helper cache
-
-
+git config --global user.signinkey rsa3072/3CD5D6A0B9B8F207
+git config --global commit.gpgsign true
 
 
