@@ -41,4 +41,5 @@ git config --global credential.helper cache
 git config --global user.signingkey 3CD5D6A0B9B8F207
 git config --global commit.gpgsign true
 
-
+# install poetry
+curl -sSL https://install.python-poetry.org | python3 -
