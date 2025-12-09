@@ -1,0 +1,461 @@
+# If you come from bash you might have to change your $PATH.
+# export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
+
+# Path to your Oh My Zsh installation.
+export ZSH="$HOME/.oh-my-zsh"
+
+# Set name of the theme to load --- if set to "random", it will
+# load a random theme each time Oh My Zsh is loaded, in which case,
+# to know which specific one was loaded, run: echo $RANDOM_THEME
+# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
+ZSH_THEME="powerlevel10k/powerlevel10k"
+
+# Set list of themes to pick from when loading at random
+# Setting this variable when ZSH_THEME=random will cause zsh to load
+# a theme from this variable instead of looking in $ZSH/themes/
+# If set to an empty array, this variable will have no effect.
+# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
+
+# Uncomment the following line to use case-sensitive completion.
+# CASE_SENSITIVE="true"
+
+# Uncomment the following line to use hyphen-insensitive completion.
+# Case-sensitive completion must be off. _ and - will be interchangeable.
+# HYPHEN_INSENSITIVE="true"
+
+# Uncomment one of the following lines to change the auto-update behavior
+# zstyle ':omz:update' mode disabled  # disable automatic updates
+# zstyle ':omz:update' mode auto      # update automatically without asking
+# zstyle ':omz:update' mode reminder  # just remind me to update when it's time
+
+# Uncomment the following line to change how often to auto-update (in days).
+# zstyle ':omz:update' frequency 13
+
+# Uncomment the following line if pasting URLs and other text is messed up.
+# DISABLE_MAGIC_FUNCTIONS="true"
+
+# Uncomment the following line to disable colors in ls.
+# DISABLE_LS_COLORS="true"
+
+# Uncomment the following line to disable auto-setting terminal title.
+# DISABLE_AUTO_TITLE="true"
+
+# Uncomment the following line to enable command auto-correction.
+# ENABLE_CORRECTION="true"
+
+# Uncomment the following line to display red dots whilst waiting for completion.
+# You can also set it to another string to have that shown instead of the default red dots.
+# e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
+# Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
+# COMPLETION_WAITING_DOTS="true"
+
+# Uncomment the following line if you want to disable marking untracked files
+# under VCS as dirty. This makes repository status check for large repositories
+# much, much faster.
+# DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+# Uncomment the following line if you want to change the command execution time
+# stamp shown in the history command output.
+# You can set one of the optional three formats:
+# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
+# or set a custom format using the strftime function format specifications,
+# see 'man strftime' for details.
+# HIST_STAMPS="mm/dd/yyyy"
+
+# Would you like to use another custom folder than $ZSH/custom?
+# ZSH_CUSTOM=/path/to/new-custom-folder
+
+# Which plugins would you like to load?
+# Standard plugins can be found in $ZSH/plugins/
+# Custom plugins may be added to $ZSH_CUSTOM/plugins/
+# Example format: plugins=(rails git textmate ruby lighthouse)
+# Add wisely, as too many plugins slow down shell startup.
+plugins=(
+  git
+  docker
+  docker-compose
+  kubectl
+  command-not-found
+  colored-man-pages
+  zsh-autosuggestions
+  zsh-syntax-highlighting
+)
+
+source $ZSH/oh-my-zsh.sh
+
+# User configuration
+
+# export MANPATH="/usr/local/man:$MANPATH"
+
+# You may need to manually set your language environment
+# export LANG=en_US.UTF-8
+
+# Preferred editor for local and remote sessions
+# if [[ -n $SSH_CONNECTION ]]; then
+#   export EDITOR='vim'
+# else
+#   export EDITOR='nvim'
+# fi
+
+# Compilation flags
+# export ARCHFLAGS="-arch $(uname -m)"
+
+# Set personal aliases, overriding those provided by Oh My Zsh libs,
+# plugins, and themes. Aliases can be placed here, though Oh My Zsh
+# users are encouraged to define aliases within a top-level file in
+# the $ZSH_CUSTOM folder, with .zsh extension. Examples:
+# - $ZSH_CUSTOM/aliases.zsh
+# - $ZSH_CUSTOM/macos.zsh
+# For a full list of active aliases, run `alias`.
+#
+# Example aliases
+# alias zshconfig="mate ~/.zshrc"
+# alias ohmyzsh="mate ~/.oh-my-zsh"
+
+
+export NVM_DIR="$HOME/.nvm"
+    [ -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ] && \. "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" # This loads nvm
+    [ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && \. "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" # This loads nvm bash_completion
+
+# Added by Windsurf
+export PATH="/Users/sqadri/.codeium/windsurf/bin:$PATH"
+
+# GPG TTY setup for signing commits
+export GPG_TTY=$(tty)
+
+. "$HOME/.local/bin/env"
+export PATH="$HOME/.dotnet:$PATH"
+
+# pnpm
+export PNPM_HOME="/Users/sqadri/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# --- Quick repo root navigation (zsh) ---
+# Jump to the current git repository root
+root() {
+  local r
+  r=$(git rev-parse --show-toplevel 2>/dev/null) || {
+    echo "Not inside a git repository."
+    return 1
+  }
+  builtin cd "$r" || return
+}
+
+# cd to a path relative to the repo root
+# Usage: rt [sub/path]
+rt() {
+  local r
+  r=$(git rev-parse --show-toplevel 2>/dev/null) || {
+    echo "Not inside a git repository."
+    return 1
+  }
+  if [ $# -eq 0 ]; then
+    builtin cd "$r" || return
+  else
+    builtin cd "$r/$*" || return
+  fi
+}
+
+# Convenience: cd to an app folder under common roots
+# Tries: apps/<name>, app/<name>, services/<name>, packages/<name>, or <name>
+# Usage: app <name>
+app() {
+  if [ $# -eq 0 ]; then
+    echo "Usage: app <name>"
+    return 2
+  fi
+  local r
+  r=$(git rev-parse --show-toplevel 2>/dev/null) || {
+    echo "Not inside a git repository."
+    return 1
+  }
+  local -a candidates
+  candidates=(
+    "apps/$1"
+    "app/$1"
+    "services/$1"
+    "packages/$1"
+    "$1"
+  )
+  local p target=""
+  for p in "${candidates[@]}"; do
+    if [ -d "$r/$p" ]; then
+      target="$r/$p"
+      break
+    fi
+  done
+  if [ -n "$target" ]; then
+    builtin cd "$target" || return
+  else
+    echo "No matching app folder for '$1' under $r"
+    return 1
+  fi
+}
+
+# Short alias
+alias r='root'
+
+# Powerlevel10k configuration
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# ==================== DevOps Aliases & Functions ====================
+
+# -------------------- Docker & Docker Compose --------------------
+alias d='docker'
+alias dc='docker-compose'
+alias dps='docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"'
+alias dpsa='docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"'
+alias di='docker images'
+alias dex='docker exec -it'
+alias dlog='docker logs -f'
+alias dprune='docker system prune -af --volumes'
+alias dstop='docker stop $(docker ps -q)'
+
+# Docker Swarm
+alias dsw='docker swarm'
+alias dsn='docker service'
+alias dsl='docker service ls'
+alias dsps='docker service ps'
+alias dslogs='docker service logs -f'
+alias dscale='docker service scale'
+alias dstack='docker stack'
+alias dstls='docker stack ls'
+alias dstps='docker stack ps'
+alias dstrm='docker stack rm'
+
+# Docker cleanup functions
+dclean() {
+  echo "Removing stopped containers..."
+  docker container prune -f
+  echo "Removing dangling images..."
+  docker image prune -f
+  echo "Removing unused networks..."
+  docker network prune -f
+  echo "Removing unused volumes..."
+  docker volume prune -f
+}
+
+# Exec into container by partial name
+dsh() {
+  if [ -z "$1" ]; then
+    echo "Usage: dsh <container-name-or-id>"
+    return 1
+  fi
+  local container=$(docker ps --format '{{.Names}}' | grep "$1" | head -1)
+  if [ -z "$container" ]; then
+    echo "No running container found matching: $1"
+    return 1
+  fi
+  echo "Connecting to: $container"
+  docker exec -it "$container" /bin/sh -c 'command -v bash >/dev/null && exec bash || exec sh'
+}
+
+# -------------------- Kubernetes --------------------
+alias k='kubectl'
+alias kgp='kubectl get pods'
+alias kgs='kubectl get services'
+alias kgd='kubectl get deployments'
+alias kgn='kubectl get nodes'
+alias kd='kubectl describe'
+alias kdp='kubectl describe pod'
+alias kl='kubectl logs'
+alias klf='kubectl logs -f'
+alias kex='kubectl exec -it'
+alias kaf='kubectl apply -f'
+alias kdf='kubectl delete -f'
+alias kctx='kubectl config current-context'
+alias kns='kubectl config set-context --current --namespace'
+
+# Get all resources in namespace
+kgetall() {
+  local ns=${1:-default}
+  echo "Getting all resources in namespace: $ns"
+  kubectl get all -n "$ns"
+}
+
+# Quick pod shell access
+ksh() {
+  if [ -z "$1" ]; then
+    echo "Usage: ksh <pod-name> [container-name]"
+    return 1
+  fi
+  if [ -n "$2" ]; then
+    kubectl exec -it "$1" -c "$2" -- /bin/sh -c 'command -v bash >/dev/null && exec bash || exec sh'
+  else
+    kubectl exec -it "$1" -- /bin/sh -c 'command -v bash >/dev/null && exec bash || exec sh'
+  fi
+}
+
+# Watch pods in current namespace
+kwatch() {
+  watch -n 2 "kubectl get pods ${1:+ -l $1} | grep -E '(NAME|Running|Error|CrashLoop|Pending|Terminating)'"
+}
+
+# Port forward helper (unalias kubectl plugin's kpf first)
+unalias kpf 2>/dev/null
+kpf() {
+  if [ -z "$1" ] || [ -z "$2" ]; then
+    echo "Usage: kpf <pod-name> <port>"
+    return 1
+  fi
+  kubectl port-forward "$1" "$2:$2"
+}
+
+# Switch kubernetes context quickly
+kuse() {
+  if [ -z "$1" ]; then
+    kubectl config get-contexts
+  else
+    kubectl config use-context "$1"
+  fi
+}
+
+# -------------------- Git --------------------
+alias gs='git status'
+alias ga='git add'
+alias gaa='git add .'
+alias gc='git commit -m'
+alias gca='git commit --amend'
+alias gp='git push'
+alias gpl='git pull'
+alias gf='git fetch'
+alias gb='git branch'
+alias gco='git checkout'
+alias gcb='git checkout -b'
+alias gd='git diff'
+alias gds='git diff --staged'
+alias gl='git log --oneline --graph --decorate -10'
+alias gla='git log --oneline --graph --decorate --all'
+
+# -------------------- System Monitoring --------------------
+alias ports='lsof -i -P -n | grep LISTEN'
+alias myip='curl -s https://api.ipify.org && echo'
+alias localip='ipconfig getifaddr en0'
+
+# Process monitoring
+alias psg='ps aux | grep -v grep | grep -i -e VSZ -e'
+alias memtop='top -o MEM'
+alias cputop='top -o CPU'
+
+# -------------------- tmux --------------------
+alias t='tmux'
+alias ta='tmux attach -t'
+alias tl='tmux list-sessions'
+alias tn='tmux new -s'
+alias tk='tmux kill-session -t'
+
+# Quick tmux session for project
+tproj() {
+  if [ -z "$1" ]; then
+    echo "Usage: tproj <session-name>"
+    return 1
+  fi
+  tmux new-session -d -s "$1"
+  tmux send-keys -t "$1" "cd $PWD" C-m
+  tmux attach -t "$1"
+}
+
+# -------------------- SSH & Network --------------------
+# Quick SSH with tmux
+ssht() {
+  if [ -z "$1" ]; then
+    echo "Usage: ssht <host>"
+    return 1
+  fi
+  ssh "$1" -t "tmux attach || tmux new"
+}
+
+# Test port connectivity
+testport() {
+  if [ -z "$1" ] || [ -z "$2" ]; then
+    echo "Usage: testport <host> <port>"
+    return 1
+  fi
+  nc -zv "$1" "$2"
+}
+
+# -------------------- File Operations --------------------
+alias ll='ls -lah'
+alias la='ls -A'
+alias l='ls -CF'
+
+# Quick navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+# Make directory and cd into it
+mkcd() {
+  mkdir -p "$1" && cd "$1"
+}
+
+# -------------------- Archie Platform Specific --------------------
+# Navigate to archie platform
+alias archie='cd /Users/sqadri/client-work/archie/archie-platform-v2'
+
+# Quick service navigation within archie
+svc() {
+  if [ -z "$1" ]; then
+    echo "Usage: svc <service-name>"
+    echo "Available services:"
+    ls -d /Users/sqadri/client-work/archie/archie-platform-v2/services/* 2>/dev/null | xargs -n 1 basename
+    return 1
+  fi
+  cd "/Users/sqadri/client-work/archie/archie-platform-v2/services/$1" 2>/dev/null || echo "Service not found: $1"
+}
+
+# -------------------- Development Helpers --------------------
+# Find and kill process by port
+killport() {
+  if [ -z "$1" ]; then
+    echo "Usage: killport <port>"
+    return 1
+  fi
+  lsof -ti:"$1" | xargs kill -9
+}
+
+# Quick HTTP server
+serve() {
+  local port=${1:-8000}
+  python3 -m http.server "$port"
+}
+
+# -------------------- Environment Info --------------------
+# Show current DevOps context
+devinfo() {
+  echo "=== DevOps Environment Info ==="
+  echo ""
+  echo "Kubernetes Context: $(kubectl config current-context 2>/dev/null || echo 'Not configured')"
+  echo "Kubernetes Namespace: $(kubectl config view --minify --output 'jsonpath={..namespace}' 2>/dev/null || echo 'default')"
+  echo ""
+  echo "Docker:"
+  docker version --format '  Client: {{.Client.Version}}  Server: {{.Server.Version}}' 2>/dev/null || echo "  Not running"
+  echo ""
+  echo "Docker Swarm:"
+  docker info --format '  Status: {{.Swarm.LocalNodeState}}' 2>/dev/null || echo "  Not active"
+  echo ""
+  echo "Git Branch: $(git branch --show-current 2>/dev/null || echo 'Not in a git repo')"
+  echo "Git Remote: $(git remote get-url origin 2>/dev/null || echo 'No remote')"
+  echo ""
+  echo "Node: $(node --version 2>/dev/null || echo 'Not installed')"
+  echo "npm: $(npm --version 2>/dev/null || echo 'Not installed')"
+  echo "pnpm: $(pnpm --version 2>/dev/null || echo 'Not installed')"
+}
+
+# -------------------- Auto-completions --------------------
+# kubectl completion (if not already loaded by plugin)
+if command -v kubectl &> /dev/null; then
+  source <(kubectl completion zsh)
+  complete -F __start_kubectl k
+fi
+
+# docker completion (if not already loaded by plugin)
+if command -v docker &> /dev/null; then
+  # macOS specific docker completion location
+  [ -f /Applications/Docker.app/Contents/Resources/etc/docker.zsh-completion ] && source /Applications/Docker.app/Contents/Resources/etc/docker.zsh-completion
+fi

@@ -55,7 +55,7 @@ cask "1password"
 # =============================================================================
 # APPLICATIONS - AI & Development
 # =============================================================================
-cask "visual-studio-code"
+cask "zed"                     # AI-native code editor
 cask "warp"                    # AI-powered terminal
 cask "iterm2"
 cask "sublime-text"
