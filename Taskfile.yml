@@ -15,13 +15,25 @@ tasks:
   # ===========================================================================
 
   all:
-    desc: Run full setup (brew, dotfiles, git, claude)
+    desc: Run full setup (brew, dotfiles, macos, git, ssh, tmux, claude)
     cmds:
       - task: brew
       - task: dotfiles
       - task: zsh-plugins
+      - task: tmux-plugins
       - task: git
+      - task: ssh
+      - task: macos
       - task: claude
+
+  backup-1password:
+    desc: Back up all secrets to 1Password (SSH, GPG, dbt)
+    cmds:
+      - task: ssh:backup-1password
+      - task: gpg:backup-1password
+      - task: dbt:backup-1password
+      - echo ""
+      - echo "=== All secrets backed up to 1Password ==="
 
   # ===========================================================================
   # HOMEBREW
@@ -80,6 +92,9 @@ tasks:
     cmds:
       - task: dotfiles:zsh
       - task: dotfiles:zed
+      - task: dotfiles:git
+      - task: dotfiles:ssh
+      - task: dotfiles:tmux
 
   dotfiles:zsh:
     desc: Symlink zsh configuration
@@ -105,12 +120,53 @@ tasks:
       - ln -sf {{.DOTFILES_DIR}}/zed/settings.json ~/.config/zed/settings.json
       - echo "Symlinked Zed config"
 
+  dotfiles:git:
+    desc: Symlink git configuration
+    cmds:
+      - |
+        if [ -f ~/.gitconfig ] && [ ! -L ~/.gitconfig ]; then
+          echo "Backing up existing .gitconfig to .gitconfig.backup"
+          mv ~/.gitconfig ~/.gitconfig.backup
+        fi
+      - ln -sf {{.DOTFILES_DIR}}/git/gitconfig ~/.gitconfig
+      - ln -sf {{.DOTFILES_DIR}}/git/gitignore_global ~/.gitignore_global
+      - echo "Symlinked git config"
+
+  dotfiles:ssh:
+    desc: Symlink SSH configuration
+    cmds:
+      - mkdir -p ~/.ssh/sockets
+      - chmod 700 ~/.ssh
+      - |
+        if [ -f ~/.ssh/config ] && [ ! -L ~/.ssh/config ]; then
+          echo "Backing up existing SSH config"
+          mv ~/.ssh/config ~/.ssh/config.backup
+        fi
+      - ln -sf {{.DOTFILES_DIR}}/ssh/config ~/.ssh/config
+      - chmod 600 ~/.ssh/config
+      - echo "Symlinked SSH config"
+
+  dotfiles:tmux:
+    desc: Symlink tmux configuration
+    cmds:
+      - |
+        if [ -f ~/.tmux.conf ] && [ ! -L ~/.tmux.conf ]; then
+          echo "Backing up existing .tmux.conf to .tmux.conf.backup"
+          mv ~/.tmux.conf ~/.tmux.conf.backup
+        fi
+      - ln -sf {{.DOTFILES_DIR}}/tmux/tmux.conf ~/.tmux.conf
+      - echo "Symlinked tmux config"
+
   dotfiles:backup:
     desc: Copy current dotfiles from system to this repo
     cmds:
       - cp ~/.zshrc {{.DOTFILES_DIR}}/zsh/zshrc
       - cp ~/.p10k.zsh {{.DOTFILES_DIR}}/zsh/p10k.zsh
       - cp ~/.config/zed/settings.json {{.DOTFILES_DIR}}/zed/settings.json
+      - cp ~/.gitconfig {{.DOTFILES_DIR}}/git/gitconfig 2>/dev/null || true
+      - cp ~/.gitignore_global {{.DOTFILES_DIR}}/git/gitignore_global 2>/dev/null || true
+      - cp ~/.ssh/config {{.DOTFILES_DIR}}/ssh/config 2>/dev/null || true
+      - cp ~/.tmux.conf {{.DOTFILES_DIR}}/tmux/tmux.conf 2>/dev/null || true
       - echo "Dotfiles backed up to repo"
 
   # ===========================================================================
@@ -158,20 +214,374 @@ tasks:
       - git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
 
   # ===========================================================================
+  # TMUX PLUGINS
+  # ===========================================================================
+
+  tmux-plugins:
+    desc: Install tmux plugin manager and plugins
+    cmds:
+      - task: tmux-plugins:tpm
+
+  tmux-plugins:tpm:
+    desc: Install TPM (Tmux Plugin Manager)
+    status:
+      - test -d ~/.tmux/plugins/tpm
+    cmds:
+      - echo "Installing TPM..."
+      - git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+      - echo "TPM installed. Run 'prefix + I' in tmux to install plugins."
+
+  # ===========================================================================
   # GIT
   # ===========================================================================
 
   git:
-    desc: Configure git globally
+    desc: Symlink git configuration (replaces git config commands)
     cmds:
-      - git config --global user.name "Saadat Qadri"
-      - git config --global user.email "saadat.qadri@gmail.com"
-      - git config --global init.defaultBranch main
-      - git config --global core.editor "zed --wait"
-      - git config --global credential.helper cache
-      - git config --global user.signingkey 3CD5D6A0B9B8F207
-      - git config --global commit.gpgsign true
-      - echo "Git configured"
+      - task: dotfiles:git
+      - echo "Git configured via dotfile symlink"
+
+  # ===========================================================================
+  # SSH
+  # ===========================================================================
+
+  ssh:
+    desc: Setup SSH configuration and generate keys if needed
+    cmds:
+      - task: dotfiles:ssh
+      - task: ssh:keygen
+      - echo "SSH configured. See scripts/ssh-backup-1password.md for key backup guide."
+
+  ssh:keygen:
+    desc: Generate SSH keys for GitHub accounts if not present
+    cmds:
+      - task: ssh:keygen:saadatqadri
+      - task: ssh:keygen:heyarchie
+
+  ssh:keygen:saadatqadri:
+    desc: Generate SSH key for saadatqadri GitHub
+    status:
+      - test -f ~/.ssh/id_ed25519_saadatqadri
+    cmds:
+      - echo "Generating SSH key for saadatqadri..."
+      - ssh-keygen -t ed25519 -C "saadatqadri@github" -f ~/.ssh/id_ed25519_saadatqadri -N ""
+      - chmod 600 ~/.ssh/id_ed25519_saadatqadri
+      - chmod 644 ~/.ssh/id_ed25519_saadatqadri.pub
+      - echo ""
+      - echo "Add this key to GitHub (saadatqadri account):"
+      - echo "  gh ssh-key add ~/.ssh/id_ed25519_saadatqadri.pub --title \"$(hostname)-saadatqadri\""
+      - cat ~/.ssh/id_ed25519_saadatqadri.pub
+
+  ssh:keygen:heyarchie:
+    desc: Generate SSH key for HeyArchie GitHub
+    status:
+      - test -f ~/.ssh/id_ed25519_heyarchie
+    cmds:
+      - echo "Generating SSH key for HeyArchie..."
+      - ssh-keygen -t ed25519 -C "saadat-heyarchie@github" -f ~/.ssh/id_ed25519_heyarchie -N ""
+      - chmod 600 ~/.ssh/id_ed25519_heyarchie
+      - chmod 644 ~/.ssh/id_ed25519_heyarchie.pub
+      - echo ""
+      - echo "Add this key to GitHub (saadat-heyarchie account):"
+      - cat ~/.ssh/id_ed25519_heyarchie.pub
+
+  ssh:show:
+    desc: Display public SSH keys
+    cmds:
+      - echo "=== SSH Public Keys ==="
+      - |
+        for key in ~/.ssh/*.pub; do
+          if [ -f "$key" ]; then
+            echo ""
+            echo "--- $key ---"
+            cat "$key"
+          fi
+        done
+
+  ssh:add-github:
+    desc: Add SSH key to GitHub using gh CLI
+    cmds:
+      - gh ssh-key add ~/.ssh/id_ed25519.pub --title "$(hostname) $(date +%Y)"
+      - echo "SSH key added to GitHub"
+
+  ssh:backup-1password:
+    desc: Back up all SSH keys to 1Password
+    cmds:
+      - |
+        if ! command -v op &> /dev/null; then
+          echo "Error: 1Password CLI not installed. Run: brew install 1password-cli"
+          exit 1
+        fi
+      - |
+        # Check if signed in
+        if ! op account list &> /dev/null; then
+          echo "Please sign in to 1Password CLI first:"
+          echo "  eval \$(op signin)"
+          exit 1
+        fi
+      - |
+        echo "Backing up SSH keys to 1Password..."
+
+        # Define keys to back up (name:path pairs)
+        declare -A keys=(
+          ["SSH Key - saadatqadri GitHub"]="$HOME/.ssh/id_ed25519_saadatqadri"
+          ["SSH Key - HeyArchie GitHub"]="$HOME/.ssh/id_ed25519_heyarchie"
+          ["SSH Key - Archie (legacy)"]="$HOME/.ssh/archie_id_ed25519"
+          ["SSH Key - Personal (legacy)"]="$HOME/.ssh/id_ed25519"
+        )
+
+        for title in "${!keys[@]}"; do
+          key_path="${keys[$title]}"
+
+          if [ -f "$key_path" ]; then
+            echo "Backing up: $title"
+
+            # Check if item already exists
+            if op item get "$title" &> /dev/null; then
+              echo "  Item exists, updating..."
+              op item edit "$title" \
+                "private_key[password]=$(cat "$key_path")" \
+                "public_key[text]=$(cat "${key_path}.pub")" \
+                "notes[text]=Updated from $(hostname) on $(date)"
+            else
+              echo "  Creating new item..."
+              op item create \
+                --category="Secure Note" \
+                --title="$title" \
+                "private_key[password]=$(cat "$key_path")" \
+                "public_key[text]=$(cat "${key_path}.pub")" \
+                "notes[text]=Backed up from $(hostname) on $(date)"
+            fi
+          else
+            echo "Skipping $title (not found at $key_path)"
+          fi
+        done
+
+        echo ""
+        echo "Backup complete! Keys stored in 1Password."
+
+  ssh:restore-1password:
+    desc: Restore SSH keys from 1Password
+    cmds:
+      - |
+        if ! command -v op &> /dev/null; then
+          echo "Error: 1Password CLI not installed. Run: brew install 1password-cli"
+          exit 1
+        fi
+      - |
+        if ! op account list &> /dev/null; then
+          echo "Please sign in to 1Password CLI first:"
+          echo "  eval \$(op signin)"
+          exit 1
+        fi
+      - |
+        echo "Available SSH keys in 1Password:"
+        op item list --categories "Secure Note" | grep -i "SSH Key" || echo "  No SSH keys found"
+        echo ""
+        echo "To restore a specific key, run:"
+        echo "  op item get 'SSH Key - Personal GitHub' --fields private_key > ~/.ssh/id_ed25519"
+        echo "  op item get 'SSH Key - Personal GitHub' --fields public_key > ~/.ssh/id_ed25519.pub"
+        echo "  chmod 600 ~/.ssh/id_ed25519 && chmod 644 ~/.ssh/id_ed25519.pub"
+
+  # ===========================================================================
+  # GPG
+  # ===========================================================================
+
+  gpg:backup-1password:
+    desc: Back up GPG keys to 1Password
+    cmds:
+      - |
+        if ! command -v op &> /dev/null; then
+          echo "Error: 1Password CLI not installed. Run: brew install 1password-cli"
+          exit 1
+        fi
+      - |
+        if ! op account list &> /dev/null; then
+          echo "Please sign in to 1Password CLI first:"
+          echo "  eval \$(op signin)"
+          exit 1
+        fi
+      - |
+        if ! command -v gpg &> /dev/null; then
+          echo "Error: GPG not installed. Run: brew install gnupg"
+          exit 1
+        fi
+      - |
+        echo "Available GPG secret keys:"
+        gpg --list-secret-keys --keyid-format LONG
+        echo ""
+
+        # Get key IDs
+        key_ids=$(gpg --list-secret-keys --keyid-format LONG | grep "sec" | awk '{print $2}' | cut -d'/' -f2)
+
+        if [ -z "$key_ids" ]; then
+          echo "No GPG secret keys found."
+          exit 0
+        fi
+
+        for key_id in $key_ids; do
+          # Get user ID (email) for this key
+          user_id=$(gpg --list-secret-keys --keyid-format LONG "$key_id" | grep "uid" | head -1 | sed 's/.*] //')
+          title="GPG Key - $key_id"
+
+          echo "Backing up: $title ($user_id)"
+
+          # Export keys to temp files
+          private_key=$(gpg --armor --export-secret-keys "$key_id")
+          public_key=$(gpg --armor --export "$key_id")
+
+          # Check if item already exists
+          if op item get "$title" &> /dev/null; then
+            echo "  Item exists, updating..."
+            op item edit "$title" \
+              "private_key[password]=$private_key" \
+              "public_key[text]=$public_key" \
+              "key_id[text]=$key_id" \
+              "user_id[text]=$user_id" \
+              "notes[text]=Updated from $(hostname) on $(date)"
+          else
+            echo "  Creating new item..."
+            op item create \
+              --category="Secure Note" \
+              --title="$title" \
+              "private_key[password]=$private_key" \
+              "public_key[text]=$public_key" \
+              "key_id[text]=$key_id" \
+              "user_id[text]=$user_id" \
+              "notes[text]=Backed up from $(hostname) on $(date)"
+          fi
+        done
+
+        echo ""
+        echo "GPG backup complete!"
+
+  gpg:restore-1password:
+    desc: Restore GPG keys from 1Password
+    cmds:
+      - |
+        if ! command -v op &> /dev/null; then
+          echo "Error: 1Password CLI not installed. Run: brew install 1password-cli"
+          exit 1
+        fi
+      - |
+        if ! op account list &> /dev/null; then
+          echo "Please sign in to 1Password CLI first:"
+          echo "  eval \$(op signin)"
+          exit 1
+        fi
+      - |
+        echo "Available GPG keys in 1Password:"
+        op item list --categories "Secure Note" | grep -i "GPG Key" || echo "  No GPG keys found"
+        echo ""
+        echo "To restore a specific key, run:"
+        echo "  op item get 'GPG Key - KEYID' --fields private_key | gpg --import"
+        echo ""
+        echo "After importing, trust the key:"
+        echo "  gpg --edit-key KEYID"
+        echo "  > trust"
+        echo "  > 5 (ultimate trust)"
+        echo "  > quit"
+
+  # ===========================================================================
+  # DBT
+  # ===========================================================================
+
+  dbt:backup-1password:
+    desc: Back up ~/.dbt folder to 1Password
+    cmds:
+      - |
+        if ! command -v op &> /dev/null; then
+          echo "Error: 1Password CLI not installed. Run: brew install 1password-cli"
+          exit 1
+        fi
+      - |
+        if ! op account list &> /dev/null; then
+          echo "Please sign in to 1Password CLI first:"
+          echo "  eval \$(op signin)"
+          exit 1
+        fi
+      - |
+        if [ ! -d ~/.dbt ]; then
+          echo "No ~/.dbt folder found."
+          exit 0
+        fi
+
+        echo "Backing up ~/.dbt to 1Password..."
+
+        title="dbt Config - $(hostname)"
+
+        # Read file contents
+        profiles_yml=""
+        dbt_cloud_yml=""
+        user_yml=""
+
+        [ -f ~/.dbt/profiles.yml ] && profiles_yml=$(cat ~/.dbt/profiles.yml)
+        [ -f ~/.dbt/dbt_cloud.yml ] && dbt_cloud_yml=$(cat ~/.dbt/dbt_cloud.yml)
+        [ -f ~/.dbt/.user.yml ] && user_yml=$(cat ~/.dbt/.user.yml)
+
+        # Check if item already exists
+        if op item get "$title" &> /dev/null; then
+          echo "Item exists, updating..."
+          op item edit "$title" \
+            "profiles_yml[password]=$profiles_yml" \
+            "dbt_cloud_yml[text]=$dbt_cloud_yml" \
+            "user_yml[text]=$user_yml" \
+            "notes[text]=Updated from $(hostname) on $(date)"
+        else
+          echo "Creating new item..."
+          op item create \
+            --category="Secure Note" \
+            --title="$title" \
+            "profiles_yml[password]=$profiles_yml" \
+            "dbt_cloud_yml[text]=$dbt_cloud_yml" \
+            "user_yml[text]=$user_yml" \
+            "notes[text]=Backed up from $(hostname) on $(date)"
+        fi
+
+        echo ""
+        echo "dbt config backup complete!"
+
+  dbt:restore-1password:
+    desc: Restore ~/.dbt folder from 1Password
+    cmds:
+      - |
+        if ! command -v op &> /dev/null; then
+          echo "Error: 1Password CLI not installed. Run: brew install 1password-cli"
+          exit 1
+        fi
+      - |
+        if ! op account list &> /dev/null; then
+          echo "Please sign in to 1Password CLI first:"
+          echo "  eval \$(op signin)"
+          exit 1
+        fi
+      - |
+        echo "Available dbt configs in 1Password:"
+        op item list --categories "Secure Note" | grep -i "dbt Config" || echo "  No dbt configs found"
+        echo ""
+        echo "To restore, run:"
+        echo "  mkdir -p ~/.dbt"
+        echo "  op item get 'dbt Config - HOSTNAME' --fields 'profiles_yml' > ~/.dbt/profiles.yml"
+        echo "  op item get 'dbt Config - HOSTNAME' --fields 'dbt_cloud_yml' > ~/.dbt/dbt_cloud.yml"
+        echo "  op item get 'dbt Config - HOSTNAME' --fields 'user_yml' > ~/.dbt/.user.yml"
+        echo "  chmod 600 ~/.dbt/profiles.yml"
+
+  # ===========================================================================
+  # MACOS DEFAULTS
+  # ===========================================================================
+
+  macos:
+    desc: Apply macOS system preferences
+    cmds:
+      - chmod +x {{.ROOT_DIR}}/scripts/macos-defaults.sh
+      - "{{.ROOT_DIR}}/scripts/macos-defaults.sh"
+
+  macos:reset-dock:
+    desc: Reset dock to default state
+    cmds:
+      - defaults delete com.apple.dock
+      - killall Dock
+      - echo "Dock reset to defaults"
 
   # ===========================================================================
   # CLAUDE CODE
@@ -207,9 +617,24 @@ tasks:
         [ -L ~/.zshrc ] && echo "  ~/.zshrc -> $(readlink ~/.zshrc)" || echo "  ~/.zshrc: not symlinked"
         [ -L ~/.p10k.zsh ] && echo "  ~/.p10k.zsh -> $(readlink ~/.p10k.zsh)" || echo "  ~/.p10k.zsh: not symlinked"
         [ -L ~/.config/zed/settings.json ] && echo "  ~/.config/zed/settings.json -> $(readlink ~/.config/zed/settings.json)" || echo "  ~/.config/zed/settings.json: not symlinked"
+        [ -L ~/.gitconfig ] && echo "  ~/.gitconfig -> $(readlink ~/.gitconfig)" || echo "  ~/.gitconfig: not symlinked"
+        [ -L ~/.gitignore_global ] && echo "  ~/.gitignore_global -> $(readlink ~/.gitignore_global)" || echo "  ~/.gitignore_global: not symlinked"
+        [ -L ~/.ssh/config ] && echo "  ~/.ssh/config -> $(readlink ~/.ssh/config)" || echo "  ~/.ssh/config: not symlinked"
+        [ -L ~/.tmux.conf ] && echo "  ~/.tmux.conf -> $(readlink ~/.tmux.conf)" || echo "  ~/.tmux.conf: not symlinked"
+      - echo ""
+      - echo "SSH Keys:"
+      - |
+        [ -f ~/.ssh/id_ed25519_saadatqadri ] && echo "  id_ed25519_saadatqadri: present" || echo "  id_ed25519_saadatqadri: not found"
+        [ -f ~/.ssh/id_ed25519_heyarchie ] && echo "  id_ed25519_heyarchie: present" || echo "  id_ed25519_heyarchie: not found"
+      - echo ""
+      - echo "Plugins:"
+      - |
+        [ -d ~/.oh-my-zsh ] && echo "  oh-my-zsh: installed" || echo "  oh-my-zsh: not installed"
+        [ -d ~/.tmux/plugins/tpm ] && echo "  TPM: installed" || echo "  TPM: not installed"
       - echo ""
       - echo "Tools:"
       - |
         command -v claude &> /dev/null && echo "  Claude Code: $(claude --version 2>/dev/null || echo 'installed')" || echo "  Claude Code: not installed"
         command -v node &> /dev/null && echo "  Node: $(node --version)" || echo "  Node: not installed"
         command -v uv &> /dev/null && echo "  uv: $(uv --version)" || echo "  uv: not installed"
+        command -v mas &> /dev/null && echo "  mas: installed" || echo "  mas: not installed"
