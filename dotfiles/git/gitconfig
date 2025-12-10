@@ -1,0 +1,96 @@
+# Git configuration
+# Symlinked to ~/.gitconfig
+
+[user]
+    name = Saadat Qadri
+    email = saadat.qadri@gmail.com
+    signingkey = 3CD5D6A0B9B8F207
+
+[init]
+    defaultBranch = main
+
+[core]
+    editor = zed --wait
+    excludesfile = ~/.gitignore_global
+    autocrlf = input
+    pager = less -FRX
+
+[commit]
+    gpgsign = true
+
+[gpg]
+    program = /opt/homebrew/bin/gpg
+
+[credential]
+    helper = cache
+
+[credential "https://github.com"]
+    helper =
+    helper = !/opt/homebrew/bin/gh auth git-credential
+
+[credential "https://gist.github.com"]
+    helper =
+    helper = !/opt/homebrew/bin/gh auth git-credential
+
+[url "git@github.com:"]
+    insteadOf = https://github.com/
+
+[pull]
+    rebase = true
+
+[push]
+    default = current
+    autoSetupRemote = true
+
+[fetch]
+    prune = true
+
+[merge]
+    conflictstyle = diff3
+
+[diff]
+    colorMoved = default
+
+[rebase]
+    autoStash = true
+
+[alias]
+    # Status and info
+    s = status -sb
+    l = log --oneline -20
+    lg = log --oneline --graph --decorate -20
+    last = log -1 HEAD --stat
+
+    # Branching
+    co = checkout
+    cob = checkout -b
+    br = branch
+    brd = branch -d
+    brD = branch -D
+
+    # Staging and committing
+    a = add
+    aa = add --all
+    cm = commit -m
+    amend = commit --amend --no-edit
+
+    # Pushing and pulling
+    p = push
+    pf = push --force-with-lease
+    pl = pull
+
+    # Stashing
+    st = stash
+    stp = stash pop
+    stl = stash list
+
+    # Diff
+    d = diff
+    ds = diff --staged
+
+    # Undo
+    undo = reset HEAD~1 --mixed
+    unstage = reset HEAD --
+
+    # Clean
+    gone = "!git fetch -p && git branch -vv | grep ': gone]' | awk '{print $1}' | xargs -r git branch -D"

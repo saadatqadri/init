@@ -1,45 +1,26 @@
 #!/bin/bash
+# Legacy wrapper - use 'task' commands instead
+# See: task --list
 
-# Get the directory of the script
+set -e
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-# Path to the Brewfile in the same directory as the script
-BREWFILE_PATH="${SCRIPT_DIR}/Brewfile"
+# Check if go-task is installed
+if ! command -v task &> /dev/null; then
+    echo "go-task not found. Installing via Homebrew..."
 
-# Update Homebrew and all formulas.
-echo "Updating Homebrew..."
-brew update
+    # Install Homebrew if needed
+    if ! command -v brew &> /dev/null; then
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        if [[ $(uname -m) == "arm64" ]]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        fi
+    fi
 
-# Upgrade any already-installed formulae.
-echo "Upgrading installed formulae..."
-brew upgrade
+    brew install go-task
+fi
 
-# Install or check dependencies from the Brewfile located at the user's home directory.
-echo "Checking for new applications or mismatches..."
-brew bundle --file "${BREWFILE_PATH}"
-
-# Cleanup anything that is not listed in the Brewfile.
-echo "Cleaning up unlisted applications..."
-brew bundle cleanup --force --file "${BREWFILE_PATH}"
-
-# Check if everything is in sync.
-echo "Verifying Brewfile state..."
-# Run brew bundle check with the specified Brewfile
-brew bundle check --file "${BREWFILE_PATH}"
-
-echo "Initialization complete."
-
-# oh-my-zsh (not really idempotent)
-sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-
-# git setup
-
-git config --global user.name "Saadat Qadri"
-git config --global init.defaultBranch main
-git config --global core.editor "code --wait"
-git config --global credential.helper cache
-git config --global user.signingkey 3CD5D6A0B9B8F207
-git config --global commit.gpgsign true
-
-# install poetry
-curl -sSL https://install.python-poetry.org | python3 -
+# Run the full setup
+task all

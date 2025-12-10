@@ -1,0 +1,86 @@
+# SSH Configuration
+# Symlinked to ~/.ssh/config
+#
+# NOTE: SSH keys should NOT be stored in this repo.
+# Back them up to 1Password: task ssh:backup-1password
+# Restore on new machine: task ssh:restore-1password
+
+# ==============================================================================
+# GitHub Accounts (MUST come before Host * to override global settings)
+# ==============================================================================
+
+# Default GitHub account (saadatqadri)
+Host github.com
+  HostName github.com
+  User git
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/id_ed25519_saadatqadri
+  IdentitiesOnly yes
+  IdentityAgent none
+  ControlPath ~/.ssh/sockets/github-saadatqadri
+  ForwardAgent no
+
+# HeyArchie GitHub account
+Host github-heyarchie
+  HostName github.com
+  User git
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/id_ed25519_heyarchie
+  IdentitiesOnly yes
+  IdentityAgent none
+  ControlPath ~/.ssh/sockets/github-heyarchie
+  ForwardAgent no
+
+# ==============================================================================
+# Global SSH Settings
+# ==============================================================================
+Host *
+  # Connection multiplexing for faster re-connections
+  ControlMaster auto
+  ControlPath ~/.ssh/sockets/%r@%h:%p
+  ControlPersist 10m
+
+  # Connection settings - keep connections alive
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+  TCPKeepAlive yes
+
+  # Compression for slower connections
+  Compression yes
+
+  # macOS Keychain integration - stores passphrases permanently
+  AddKeysToAgent yes
+  UseKeychain yes
+
+  # Security settings
+  ForwardAgent no
+  StrictHostKeyChecking ask
+  VerifyHostKeyDNS yes
+
+  # Performance
+  IPQoS throughput
+
+# ==============================================================================
+# Example Configurations (uncomment and customize as needed)
+# ==============================================================================
+
+# Jump Hosts / Bastion
+# Host bastion
+#   HostName bastion.example.com
+#   User your-username
+#   IdentityFile ~/.ssh/id_ed25519
+#   ForwardAgent yes
+
+# Production Servers (via bastion)
+# Host prod-*
+#   User your-username
+#   IdentityFile ~/.ssh/id_ed25519
+#   ProxyJump bastion
+#   ForwardAgent no
+
+# Staging Servers (direct access)
+# Host staging-*
+#   User your-username
+#   IdentityFile ~/.ssh/id_ed25519
